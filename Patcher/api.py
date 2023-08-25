@@ -9,6 +9,7 @@ from operator import itemgetter
 import IPython.display as display
 from skimage.metrics import structural_similarity as ssim
 import requests
+import glob
 
 app = Flask(__name__)
 
@@ -57,6 +58,18 @@ def upload_file():
         for i in range(6):
             returnlist.append(sortedlist[i][1])
         returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + png)
+        dir = 'BGRM_FOLDER/'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
+        dir = 'COMPARISON_FOLDER/'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
+        dir = 'TEMP_DOWNLOAD_FOLDER/'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
+        dir = 'UPLOAD_FOLDER/'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
         return returnlist
     else:
         return render_template('index.html')
