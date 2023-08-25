@@ -57,7 +57,7 @@ def upload_file():
         returnlist = []
         for i in range(6):
             returnlist.append(sortedlist[i][1])
-        returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + png)
+        returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + presenter + png)
         dir = 'BGRM_FOLDER/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
