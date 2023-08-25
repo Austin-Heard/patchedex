@@ -58,17 +58,6 @@ def upload_file():
             returnlist.append(sortedlist[i][1])
         returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + png)
         return returnlist
-        # for i in os.listdir('COMPARISON_FOLDER'):
-        #     sublist = []
-        #     img1_raw = 'COMPARISON_FOLDER' + slasher + i
-        #     img1 = cv2.imread(img1_raw)
-        #     img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        #     error = ssim(img1, img2)
-        #     sublist = [error,img1_raw]
-        #     masterlist.append(sublist)
-        # sortedlist = sorted(masterlist, key = itemgetter(0), reverse = True)
-        # sortedlist = sortedlist[:6]
-        # return sortedlist
     else:
         return render_template('index.html')
 
