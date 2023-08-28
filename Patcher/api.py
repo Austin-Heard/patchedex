@@ -66,13 +66,13 @@ def upload_file():
             # conditional above will skip it as a first step
             url = 'https://tobytether.s3.us-east-2.amazonaws.com/Square/' + obj.key[7:]
             r = requests.get(url, allow_redirects=True)
-            open(TEMP_DOWNLOAD_FOLDER/ + obj.key[7:], 'wb').write(r.content)
+            open(TEMP_DOWNLOAD_FOLDER + '/' + obj.key[7:], 'wb').write(r.content)
             #These three lines of code will get the url of the file associated with its position in the bucket. The
             # obj.key[7:] object is the name of the file without a 'Square/' in front of it
             sublist = []
             #The sublist will be the url combined with how similar it is to the upload folder. All the sublists will
             # be added to the masterlist
-            img1_raw = TEMP_DOWNLOAD_FOLDER/ + obj.key[7:]
+            img1_raw = TEMP_DOWNLOAD_FOLDER + '/' + obj.key[7:]
             img1 = cv2.imread(img1_raw)
             img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
             #These three lines of code prep the comparison file to be compared to the upload file
@@ -96,16 +96,16 @@ def upload_file():
         returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + presenter + png)
         #This adds the original ptch at the very end so the user has the option of selecting their own, in the event theirs is
         # the first one of its variety added to the database
-        dir = BGRM_FOLDER/
+        dir = BGRM_FOLDER + '/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
-        dir = COMPARISON_FOLDER/
+        dir = COMPARISON_FOLDER + '/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
-        dir = TEMP_DOWNLOAD_FOLDER/
+        dir = TEMP_DOWNLOAD_FOLDER + '/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
-        dir = UPLOAD_FOLDER/
+        dir = UPLOAD_FOLDER + '/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
         #These lines of code purge the temporary folders of their contents for the next run-through
