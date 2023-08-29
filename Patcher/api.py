@@ -13,10 +13,10 @@ import requests
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/UPLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/UPLOAD_FOLDER"
-BGRM_FOLDER =  "/home/alexfalse/projects/patchedex/Patcher/BGRM_FOLDER" #"/home/ubuntu/patchedex/Patcher/BGRM_FOLDER"
-COMPARISON_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/COMPARISON_FOLDER" #"/home/ubuntu/patchedex/Patcher/COMPARISON_FOLDER"
-TEMP_DOWNLOAD_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER"
+UPLOAD_FOLDER = "/home/ubuntu/patchedex/Patcher/UPLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/UPLOAD_FOLDER"
+BGRM_FOLDER =  "/home/ubuntu/patchedex/Patcher/BGRM_FOLDER" #"/home/ubuntu/patchedex/Patcher/BGRM_FOLDER"
+COMPARISON_FOLDER = "/home/ubuntu/patchedex/Patcher/COMPARISON_FOLDER" #"/home/ubuntu/patchedex/Patcher/COMPARISON_FOLDER"
+TEMP_DOWNLOAD_FOLDER = "/home/ubuntu/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER"
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
@@ -38,8 +38,11 @@ def upload_file():
         masterlist = []
         #The masterlist variable will ultimately be filled of sublists that have two elements: the url and the similarity
         # associated with the url. This will make more sense lower down
+        print('hi')
         input = Image.open(UPLOAD_FOLDER + slasher + file_to_parse)
+        print('my name is')
         output = remove(input)
+        print('will')
         output.save(os.path.join(BGRM_FOLDER, test_file.filename + presenter + png))
         #The above lines of code take from the temporary folder and make a new file that has the background removed
         # then saves that file to a different local folder
