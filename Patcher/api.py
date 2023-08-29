@@ -9,14 +9,14 @@ from skimage.metrics import structural_similarity as ssim
 import requests
 # These are the required imports. I recommend working on this in a Pythonic environment and downloading 
 # the required libraries to your local machine using pip. I haven't worked on this in anything other than 
-# a pythonic environment so I can't guarantee success otherwise
+# a pythonic environment so I can't guarantee success otherwise http://18.220.227.159:8080
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "/home/ubuntu/patchedex/Patcher/UPLOAD_FOLDER"
-BGRM_FOLDER = "/home/ubuntu/patchedex/Patcher/BGRM_FOLDER"
-COMPARISON_FOLDER = "/home/ubuntu/patchedex/Patcher/COMPARISON_FOLDER"
-TEMP_DOWNLOAD_FOLDER = "/home/ubuntu/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER"
+UPLOAD_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/UPLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/UPLOAD_FOLDER"
+BGRM_FOLDER =  "/home/alexfalse/projects/patchedex/Patcher/BGRM_FOLDER" #"/home/ubuntu/patchedex/Patcher/BGRM_FOLDER"
+COMPARISON_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/COMPARISON_FOLDER" #"/home/ubuntu/patchedex/Patcher/COMPARISON_FOLDER"
+TEMP_DOWNLOAD_FOLDER = "/home/alexfalse/projects/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER" #"/home/ubuntu/patchedex/Patcher/TEMP_DOWNLOAD_FOLDER"
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
@@ -96,6 +96,9 @@ def upload_file():
         returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + presenter + png)
         #This adds the original ptch at the very end so the user has the option of selecting their own, in the event theirs is
         # the first one of its variety added to the database
+        s3.Bucket(BUCKET).upload_file(COMPARISON_FOLDER + slasher + test_file.filename + comparisoner + png, "Square" + slasher + test_file.filename + comparisoner + png)
+        #This is the line of code that was mentioned above that was put down below. It is put here so the patch does not compare
+        # itself to itself when is run through, but still put into the AWS database for future runs
         dir = BGRM_FOLDER + '/'
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
@@ -109,12 +112,12 @@ def upload_file():
         for f in os.listdir(dir):
             os.remove(os.path.join(dir, f))
         #These lines of code purge the temporary folders of their contents for the next run-through
-        s3.Bucket(BUCKET).upload_file(COMPARISON_FOLDER + slasher + test_file.filename + comparisoner + png, "Square" + slasher + test_file.filename + comparisoner + png)
-        #This is the line of code that was mentioned above that was put down below. It is put here so the patch does not compare
-        # itself to itself when is run through, but still put into the AWS database for future runs
         return returnlist
     else:
         return render_template('index.html')
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
+
+
+
