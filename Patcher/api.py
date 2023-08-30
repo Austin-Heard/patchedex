@@ -7,9 +7,9 @@ import cv2
 from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
+from celery import Celery
 from rq import Queue
 from redis import Redis
-from celery import Celery
 
 # These are the required imports. I recommend working on this in a Pythonic environment and downloading 
 # the required libraries to your local machine using pip. I haven't worked on this in anything other than 
@@ -20,16 +20,25 @@ app = Flask(__name__)
 def make_celery(app):
     celery = Celery(
         app.import_name,
+        backend=app.config['result_backend'],
         broker=app.config['CELERY_BROKER_URL']
     )
     celery.conf.update(app.config)
     return celery
 
 app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379/0'
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    result_backend='redis://localhost:6379/0'
 )
 
+
 celery = make_celery(app)
+
+celery.conf.update(
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"]
+)
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
@@ -42,10 +51,10 @@ def queue(request_image):
     comparisoner = '_cm'
     #The four variables above help me contatinte the file and url names for saving and retrieving. I've had problems
     # incorporating '/' in strings before so I keep it as its own variable
-    test_file = request_image
+    test_file = request_image[12:]
     test_file.save(os.path.join('UPLOAD_FOLDER', test_file.filename + png))
     #The two above lines of code take the posted file and put it in a temporary folder, also forcing it into a png format
-    file_to_parse = test_file.filename + png
+    file_to_parse = request_image.filename
     #This variable just helps call from the local folder easier
     masterlist = []
     #The masterlist variable will ultimately be filled of sublists that have two elements: the url and the similarity
@@ -130,8 +139,10 @@ def queue(request_image):
 def upload_file():
     if request.method == 'POST':
         request_image = request.files['Initial_Patch']
-        queue.apply_async(args=[request_image])
+        request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
+        queue.apply_async(args=['UPLOAD_FOLDER/' + request_image.filename + '.png'])
         
 
 if __name__ == "__main__":
-    app.run(debug=True,host="0.0.0.0",port=8080)
+    app.run(debug=True, host="0.0.0.0", port=8080)
+
