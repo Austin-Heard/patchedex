@@ -20,7 +20,7 @@ app = Flask(__name__)
 def make_celery(app):
     celery = Celery(
         app.import_name,
-        backend=app.config['CELERY_RESULT_BACKEND'],
+        backend=app.config['result_backend'],
         broker=app.config['CELERY_BROKER_URL']
     )
     celery.conf.update(app.config)
@@ -28,7 +28,7 @@ def make_celery(app):
 
 app.config.update(
     CELERY_BROKER_URL='redis://localhost:6379/0',
-    CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+    result_backend='redis://localhost:6379/0'
 )
 
 
@@ -51,10 +51,10 @@ def queue(request_image):
     comparisoner = '_cm'
     #The four variables above help me contatinte the file and url names for saving and retrieving. I've had problems
     # incorporating '/' in strings before so I keep it as its own variable
-    test_file = request_image
+    test_file = request_image[12:]
     test_file.save(os.path.join('UPLOAD_FOLDER', test_file.filename + png))
     #The two above lines of code take the posted file and put it in a temporary folder, also forcing it into a png format
-    file_to_parse = test_file.filename + png
+    file_to_parse = request_image.filename
     #This variable just helps call from the local folder easier
     masterlist = []
     #The masterlist variable will ultimately be filled of sublists that have two elements: the url and the similarity
@@ -139,7 +139,8 @@ def queue(request_image):
 def upload_file():
     if request.method == 'POST':
         request_image = request.files['Initial_Patch']
-        queue.apply_async(args=[request_image])
+        request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
+        queue.apply_async(args=['UPLOAD_FOLDER/' + request_image.filename + '.png'])
         
 
 if __name__ == "__main__":
