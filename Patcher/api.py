@@ -13,7 +13,7 @@ from redis import Redis
 
 # These are the required imports. I recommend working on this in a Pythonic environment and downloading 
 # the required libraries to your local machine using pip. I haven't worked on this in anything other than 
-# a pythonic environment so I can't guarantee success otherwise http://18.220.227.159:8080
+# a pythonic environment so I can't guarantee success otherwise
 
 app = Flask(__name__)
 
@@ -145,6 +145,4 @@ def upload_file():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
-
-
 
