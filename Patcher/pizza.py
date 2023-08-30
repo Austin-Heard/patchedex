@@ -9,40 +9,18 @@ from skimage.metrics import structural_similarity as ssim
 import requests
 from rq import Queue
 from redis import Redis
-from celery import Celery
-
-# These are the required imports. I recommend working on this in a Pythonic environment and downloading 
-# the required libraries to your local machine using pip. I haven't worked on this in anything other than 
-# a pythonic environment so I can't guarantee success otherwise
-
-app = Flask(__name__)
-
-def make_celery(app):
-    celery = Celery(
-        app.import_name,
-        broker=app.config['CELERY_BROKER_URL']
-    )
-    celery.conf.update(app.config)
-    return celery
-
-app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379/0'
-)
-
-celery = make_celery(app)
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
 
-@celery.task
-def queue(request_image):  
+def queue():  
     png = '.png'
     slasher = '/'
     presenter = '_bgrm'
     comparisoner = '_cm'
     #The four variables above help me contatinte the file and url names for saving and retrieving. I've had problems
     # incorporating '/' in strings before so I keep it as its own variable
-    test_file = request_image
+    test_file = request.files['Initial_Patch']
     test_file.save(os.path.join('UPLOAD_FOLDER', test_file.filename + png))
     #The two above lines of code take the posted file and put it in a temporary folder, also forcing it into a png format
     file_to_parse = test_file.filename + png
@@ -125,13 +103,3 @@ def queue(request_image):
         os.remove(os.path.join(dir, f))
     #These lines of code purge the temporary folders of their contents for the next run-through
     return returnlist
-
-@app.route('/', methods = ['GET','POST'])
-def upload_file():
-    if request.method == 'POST':
-        request_image = request.files['Initial_Patch']
-        queue.apply_async(args=[request_image])
-        
-
-if __name__ == "__main__":
-    app.run(debug=True,host="0.0.0.0",port=8080)

@@ -1,0 +1,81 @@
+import os
+import boto3
+from flask import Flask, render_template, request
+from PIL import Image
+from rembg import remove
+import cv2
+from operator import itemgetter
+from skimage.metrics import structural_similarity as ssim
+import requests
+from rq import Queue
+from celery import Celery
+from redis import Redis
+from pizza import queue
+
+# These are the required imports. I recommend working on this in a Pythonic environment and downloading 
+# the required libraries to your local machine using pip. I haven't worked on this in anything other than 
+# a pythonic environment so I can't guarantee success otherwise http://18.220.227.159:8080
+
+app = Flask(__name__)
+
+# Initialize Celery
+def make_celery(app):
+    celery = Celery(
+        app.import_name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
+    celery.conf.update(app.config)
+    return celery
+
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+)
+
+celery = make_celery(app)
+
+@celery.task
+def remove_background(image_path):
+    # Simulate a long-running task
+    time.sleep(5)
+    return f"Removed background from {image_path}"
+
+@celery.task
+def compare_images(image_path1, image_path2):
+    # Simulate a long-running task
+    time.sleep(5)
+    return f"Compared {image_path1} with {image_path2}"
+
+@app.route('/remove_background', methods=['POST'])
+def api_remove_background():
+    image_path = request.json['image_path']
+    task = remove_background.apply_async(args=[image_path])
+    return jsonify({"status": "accepted", "task_id": str(task.id)})
+
+@app.route('/compare_images', methods=['POST'])
+def api_compare_images():
+    image_path1 = request.json['image_path1']
+    image_path2 = request.json['image_path2']
+    task = compare_images.apply_async(args=[image_path1, image_path2])
+    return jsonify({"status": "accepted", "task_id": str(task.id)})
+
+@app.route('/get_result/<task_id>', methods=['GET'])
+def get_result(task_id):
+    task_result = celery.AsyncResult(task_id)
+    if task_result.ready():
+        return jsonify({"status": "ready", "result": str(task_result.result)})
+    else:
+        return jsonify({"status": "pending"})
+
+app.route('/', methods = ['GET','POST'])
+def upload_file():
+    if request.method == 'POST':
+        q = Queue(connection=Redis())
+        result = q.enqueue(queue)
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=8080)
+
+
+
