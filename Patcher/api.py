@@ -7,6 +7,7 @@ import cv2
 from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
+from celery import Celery
 from rq import Queue
 from redis import Redis
 
@@ -30,7 +31,14 @@ app.config.update(
     CELERY_RESULT_BACKEND='redis://localhost:6379/0'
 )
 
+
 celery = make_celery(app)
+
+celery.conf.update(
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"]
+)
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
