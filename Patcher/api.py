@@ -10,16 +10,17 @@ import requests
 from celery import Celery
 from rq import Queue
 from redis import Redis
+import time
 
 # These are the required imports. I recommend working on this in a Pythonic environment and downloading 
 # the required libraries to your local machine using pip. I haven't worked on this in anything other than 
 # a pythonic environment so I can't guarantee success otherwise
-
+print('Program start')
 app = Flask(__name__)
 
 def make_celery(app):
     celery = Celery(
-        app.import_name,
+        'queue',
         backend=app.config['result_backend'],
         broker=app.config['CELERY_BROKER_URL']
     )
@@ -44,23 +45,31 @@ s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
 
 @celery.task
-def queue(request_image):  
+def queue(request_image):
+    print('Beginning of queue function')
     png = '.png'
     slasher = '/'
     presenter = '_bgrm'
     comparisoner = '_cm'
     #The four variables above help me contatinte the file and url names for saving and retrieving. I've had problems
     # incorporating '/' in strings before so I keep it as its own variable
-    test_file = request_image[12:]
-    test_file.save(os.path.join('UPLOAD_FOLDER', test_file.filename + png))
+    test_file = request_image
+    print(test_file)
     #The two above lines of code take the posted file and put it in a temporary folder, also forcing it into a png format
-    file_to_parse = request_image.filename
+    file_to_parse = request_image.filename[:-4] + png
+    print('setting image to our parse variable')
     #This variable just helps call from the local folder easier
     masterlist = []
+    print('UPLOAD_FOLDER' + slasher + file_to_parse)
     #The masterlist variable will ultimately be filled of sublists that have two elements: the url and the similarity
     # associated with the url. This will make more sense lower down
-    input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse)
+    try:
+    	input = Image.open('UPLOAD_FOLDER' + slasher + request_image.filename[:-4] + png)
+    except Exception as e:
+        print(e)
+    print('opening the image')
     output = remove(input)
+    print('background removed')
     output.save(os.path.join('BGRM_FOLDER', test_file.filename + presenter + png))
     #The above lines of code take from the temporary folder and make a new file that has the background removed
     # then saves that file to a different local folder
@@ -77,6 +86,7 @@ def queue(request_image):
     # is featured toward the end of this function
     img2 = cv2.imread('COMPARISON_FOLDER' + slasher + test_file.filename + comparisoner + png)
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    print('before compare loop')
     #These lines of code prep the initial patch to be compared
     for obj in s3.Bucket(BUCKET).objects.filter(Prefix='Square/'):
     #This for loop looks for all the items in the bucket that we're using under the folder named 'Square'. These are
@@ -111,7 +121,7 @@ def queue(request_image):
     sortedlist = sortedlist[:6]
     #Cuts off at the six patches with the highest error
     returnlist = []
-    for i in range(6):
+    for i in range(5):
         returnlist.append(sortedlist[i][1])
     #New list has all the url's associated with the six highest error patches in the database
     returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + presenter + png)
@@ -132,17 +142,21 @@ def queue(request_image):
     dir = 'UPLOAD_FOLDER/'
     for f in os.listdir(dir):
         os.remove(os.path.join(dir, f))
+    print(returnlist)
     #These lines of code purge the temporary folders of their contents for the next run-through
     return returnlist
 
 @app.route('/', methods = ['GET','POST'])
 def upload_file():
     if request.method == 'POST':
+        print('2')
         request_image = request.files['Initial_Patch']
-        request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
-        queue.apply_async(args=['UPLOAD_FOLDER/' + request_image.filename + '.png'])
-        
+        print(request_image)
+        request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename[:-4] + '.png'))
+        print('3')
+        print('UPLOAD_FOLDER/' + request_image.filename[:-4] + '.png')
+        returnlist = queue.apply_async(args = [request_image])
+    return returnlist.get()
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
+app.run(debug=True, host="0.0.0.0", port=8080)
 
