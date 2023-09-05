@@ -90,12 +90,18 @@ def queue(request_image):
         os.remove(os.path.join(dir, f))
     return returnlist
 
-@app.route('/', methods = ['GET','POST'])
+@app.route('/', methods = ['POST'])
 def upload_file():
-    if request.method == 'POST':
-        request_image = request.files['Initial_Patch']
-        request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
-        queue.delay('UPLOAD_FOLDER/' + request_image.filename + '.png')
+    request_image = request.files['Initial_Patch']
+    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
+    queue.delay('UPLOAD_FOLDER/' + request_image.filename + '.png')
+    return "HI"
+
+@app.route('/', methods = ['PUT'])
+def upload_file():
+    request_image = request.files['Initial_Patch']
+    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
+    queue('UPLOAD_FOLDER/' + request_image.filename + '.png')
     return "HI"
         
 
