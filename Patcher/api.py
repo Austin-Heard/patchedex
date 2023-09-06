@@ -8,19 +8,22 @@ from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
 from celery import Celery
+from redis import Redis
 
 app = Flask(__name__)
 
 def make_celery(app):
     celery = Celery(
         app.import_name,
-        broker=app.config['CELERY_BROKER_URL']
+        broker=app.config['CELERY_BROKER_URL'],
+        backend=app.config['result_backend']
     )
     celery.conf.update(app.config)
     return celery
 
 app.config.update(
-    CELERY_BROKER_URL='amqp://localhost',
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    result_backend='redis://localhost:6379/0'
 )
 
 
@@ -31,6 +34,7 @@ celery.conf.update(
     result_serializer="json",
     accept_content=["json"]
 )
+
 
 s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
