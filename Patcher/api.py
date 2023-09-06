@@ -42,18 +42,19 @@ def queue(request_image):
     slasher = '/'
     presenter = '_bgrm'
     comparisoner = '_cm'
-    test_file = request_image[12:]
-    test_file.save(os.path.join('UPLOAD_FOLDER', test_file.filename + png))
+    print(request_image.filename)
+    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + png))
+    print('saved')
     file_to_parse = request_image.filename
     masterlist = []
-    input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse)
+    input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse + png)
     output = remove(input)
-    output.save(os.path.join('BGRM_FOLDER', test_file.filename + presenter + png))
-    s3.Bucket(BUCKET).upload_file('BGRM_FOLDER' + slasher + test_file.filename + presenter + png, "NoBg" + slasher + test_file.filename + presenter + png)
+    output.save(os.path.join('BGRM_FOLDER', file_to_parse + presenter + png))
+    s3.Bucket(BUCKET).upload_file('BGRM_FOLDER' + slasher + file_to_parse + presenter + png, "NoBg" + slasher + file_to_parse + presenter + png)
     imageBox = output.getbbox()
     output_boxed = output.crop(imageBox).resize((254,254))
-    output_boxed.save(os.path.join('COMPARISON_FOLDER', test_file.filename + comparisoner + png))
-    img2 = cv2.imread('COMPARISON_FOLDER' + slasher + test_file.filename + comparisoner + png)
+    output_boxed.save(os.path.join('COMPARISON_FOLDER', file_to_parse + comparisoner + png))
+    img2 = cv2.imread('COMPARISON_FOLDER' + slasher + file_to_parse + comparisoner + png)
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     print("before loop")
     for obj in s3.Bucket(BUCKET).objects.filter(Prefix='Square/'):
@@ -74,8 +75,8 @@ def queue(request_image):
     returnlist = []
     for i in range(6):
         returnlist.append(sortedlist[i][1])
-    returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + test_file.filename + presenter + png)
-    s3.Bucket(BUCKET).upload_file('COMPARISON_FOLDER' + slasher + test_file.filename + comparisoner + png, "Square" + slasher + test_file.filename + comparisoner + png)
+    returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + presenter + png)
+    s3.Bucket(BUCKET).upload_file('COMPARISON_FOLDER' + slasher + file_to_parse + comparisoner + png, "Square" + slasher + file_to_parse + comparisoner + png)
     dir = 'BGRM_FOLDER/'
     for f in os.listdir(dir):
         os.remove(os.path.join(dir, f))
@@ -98,10 +99,9 @@ def upload_file():
     return "HI"
 
 @app.route('/', methods = ['PUT'])
-def upload_file():
+def upload_file_debug():
     request_image = request.files['Initial_Patch']
-    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
-    queue('UPLOAD_FOLDER/' + request_image.filename + '.png')
+    queue(request_image)
     return "HI"
         
 
