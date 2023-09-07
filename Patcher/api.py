@@ -1,6 +1,6 @@
 import os
 import boto3
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from PIL import Image
 from rembg import remove
 import cv2
@@ -8,19 +8,23 @@ from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
 from celery import Celery
+from redis import Redis
+import time
 
 app = Flask(__name__)
 
 def make_celery(app):
     celery = Celery(
         app.import_name,
-        broker=app.config['CELERY_BROKER_URL']
+        broker=app.config['CELERY_BROKER_URL'],
+        backend=app.config['result_backend']
     )
     celery.conf.update(app.config)
     return celery
 
 app.config.update(
-    CELERY_BROKER_URL='amqp://localhost',
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    result_backend='rpc://'
 )
 
 
@@ -42,10 +46,8 @@ def queue(request_image):
     slasher = '/'
     presenter = '_bgrm'
     comparisoner = '_cm'
-    print(request_image.filename)
-    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + png))
     print('saved')
-    file_to_parse = request_image.filename
+    file_to_parse = request_image
     masterlist = []
     input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse + png)
     output = remove(input)
@@ -87,8 +89,8 @@ def queue(request_image):
     for f in os.listdir(dir):
         os.remove(os.path.join(dir, f))
     dir = 'UPLOAD_FOLDER/'
-    for f in os.listdir(dir):
-        os.remove(os.path.join(dir, f))
+    os.remove(dir + request_image + png)
+    print(returnlist)
     return returnlist
 
 @app.route('/', methods = ['POST'])
@@ -101,8 +103,11 @@ def upload_file():
 @app.route('/', methods = ['PUT'])
 def upload_file_debug():
     request_image = request.files['Initial_Patch']
-    queue(request_image)
-    return "HI"
+    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
+    print('boom')
+    blorb = queue.delay(request_image.filename)
+    blorber = blorb.get()
+    return blorber
         
 
 app.run(debug=True, host="0.0.0.0", port=8080)
