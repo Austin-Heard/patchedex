@@ -8,6 +8,7 @@ from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
 from celery import Celery
+from redis import Redis
 
 app = Flask(__name__)
 
