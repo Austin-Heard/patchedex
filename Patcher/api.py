@@ -1,14 +1,12 @@
 import os
 import boto3
-from flask import Flask, render_template, request
+from flask import Flask, request
 from PIL import Image
 from rembg import remove
 import cv2
 from operator import itemgetter
 from skimage.metrics import structural_similarity as ssim
 import requests
-from celery import Celery
-from redis import Redis
 
 app = Flask(__name__)
 
@@ -16,6 +14,15 @@ s3 = boto3.resource('s3', region_name='us-east-2')
 BUCKET = 'tobytether'
 
 def pull_from_Square():
+    dir = 'BGRM_FOLDER/'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
+    dir = 'COMPARISON_FOLDER/'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
+    dir = 'UPLOAD_FOLDER/'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
     for obj in s3.Bucket(BUCKET).objects.filter(Prefix='Square/'):
         if obj.key == 'Square/':
             continue
@@ -26,48 +33,48 @@ def pull_from_Square():
 @app.route('/', methods = ['POST'])
 def upload_file():
     request_image = request.files['Initial_Patch']
-    print('initial ' + request_image.filename)
-    png = '.png'
-    slasher = '/'
-    presenter = '_bgrm'
-    comparisoner = '_cm'
-    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + png))
     file_to_parse = request_image.filename
-    masterlist = []
-    input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse + png)
+    print('initial ' + file_to_parse)
+    png = '.png'
+    slash = '/'
+    bgrm_ext = '_bgrm'
+    cm_ext = '_cm'
+    request_image.save(os.path.join('UPLOAD_FOLDER', file_to_parse + png))
+    input = Image.open('UPLOAD_FOLDER' + slash + file_to_parse + png)
     output = remove(input)
-    print('removed ' + request_image.filename)
-    output.save(os.path.join('BGRM_FOLDER', file_to_parse + presenter + png))
-    s3.Bucket(BUCKET).upload_file('BGRM_FOLDER' + slasher + file_to_parse + presenter + png, "NoBg" + slasher + file_to_parse + presenter + png)
+    print('removed ' + file_to_parse)
+    output.save(os.path.join('BGRM_FOLDER', file_to_parse + bgrm_ext + png))
+    s3.Bucket(BUCKET).upload_file('BGRM_FOLDER' + slash + file_to_parse + bgrm_ext + png, "NoBg" + slash + file_to_parse + bgrm_ext + png)
     
     imageBox = output.getbbox()
     output_boxed = output.crop(imageBox).resize((254,254))
-    output_boxed.save(os.path.join('COMPARISON_FOLDER', file_to_parse + comparisoner + png))
+    output_boxed.save(os.path.join('COMPARISON_FOLDER', file_to_parse + cm_ext + png))
+    s3.Bucket(BUCKET).upload_file('COMPARISON_FOLDER' + slash + file_to_parse + cm_ext + png, "Square" + slash + file_to_parse + cm_ext + png)
     
-    img2 = cv2.imread('COMPARISON_FOLDER' + slasher + file_to_parse + comparisoner + png)
-    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    print('before for loop ' + request_image.filename)
+    original_image = cv2.imread('COMPARISON_FOLDER' + slash + file_to_parse + cm_ext + png)
+    original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+    print('before for loop ' + file_to_parse)
+    masterlist = []
     for filename in os.listdir('COMPARISON_FOLDER/'):
         sublist = []
-        img1_raw = 'COMPARISON_FOLDER/' + filename
-        img1 = cv2.imread(img1_raw)
-        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        error = ssim(img1, img2)
-        sublist = [error, 'https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + filename[:-7] + presenter + png]
+        comparison_image_raw = 'COMPARISON_FOLDER/' + filename
+        comparison_image = cv2.imread(comparison_image_raw)
+        comparison_image = cv2.cvtColor(comparison_image, cv2.COLOR_BGR2GRAY)
+        error = ssim(comparison_image, original_image)
+        sublist = [error, 'https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + filename[:-7] + bgrm_ext + png]
         masterlist.append(sublist)
     sortedlist = sorted(masterlist, key = itemgetter(0), reverse = True)
     num_suggestions = 6
     sortedlist = sortedlist[:num_suggestions]
     returnlist = []
-    print('compared ' + request_image.filename)
+    print('compared ' + file_to_parse)
     for i in range(num_suggestions):
         returnlist.append(sortedlist[i][1])
-    returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + presenter + png)
-    s3.Bucket(BUCKET).upload_file('COMPARISON_FOLDER' + slasher + file_to_parse + comparisoner + png, "Square" + slasher + file_to_parse + comparisoner + png)
+    returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + bgrm_ext + png)
     dir = 'BGRM_FOLDER/'
-    os.remove(dir + request_image.filename + presenter + png)
+    os.remove(dir + file_to_parse + bgrm_ext + png)
     dir = 'UPLOAD_FOLDER/'
-    os.remove(dir + request_image.filename + png)
+    os.remove(dir + file_to_parse + png)
     return returnlist
 
 if __name__ == "__main__":
