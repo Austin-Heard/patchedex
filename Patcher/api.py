@@ -26,6 +26,7 @@ def pull_from_Square():
 @app.route('/', methods = ['POST'])
 def upload_file():
     request_image = request.files['Initial_Patch']
+    print('initial ' + request_image.filename)
     png = '.png'
     slasher = '/'
     presenter = '_bgrm'
@@ -35,6 +36,7 @@ def upload_file():
     masterlist = []
     input = Image.open('UPLOAD_FOLDER' + slasher + file_to_parse + png)
     output = remove(input)
+    print('removed ' + request_image.filename)
     output.save(os.path.join('BGRM_FOLDER', file_to_parse + presenter + png))
     s3.Bucket(BUCKET).upload_file('BGRM_FOLDER' + slasher + file_to_parse + presenter + png, "NoBg" + slasher + file_to_parse + presenter + png)
     
@@ -44,6 +46,7 @@ def upload_file():
     
     img2 = cv2.imread('COMPARISON_FOLDER' + slasher + file_to_parse + comparisoner + png)
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    print('before for loop ' + request_image.filename)
     for filename in os.listdir('COMPARISON_FOLDER/'):
         sublist = []
         img1_raw = 'COMPARISON_FOLDER/' + filename
@@ -56,6 +59,7 @@ def upload_file():
     num_suggestions = 6
     sortedlist = sortedlist[:num_suggestions]
     returnlist = []
+    print('compared ' + request_image.filename)
     for i in range(num_suggestions):
         returnlist.append(sortedlist[i][1])
     returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + presenter + png)
@@ -67,5 +71,4 @@ def upload_file():
     return returnlist
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
-
+    app.run(debug=True, host="0.0.0.0", port=8080, processes=100, threaded=False)
