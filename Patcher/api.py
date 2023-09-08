@@ -26,7 +26,6 @@ def pull_from_Square():
 @app.route('/', methods = ['POST'])
 def upload_file():
     request_image = request.files['Initial_Patch']
-    request_image.save(os.path.join('UPLOAD_FOLDER', request_image.filename + '.png'))
     png = '.png'
     slasher = '/'
     presenter = '_bgrm'
