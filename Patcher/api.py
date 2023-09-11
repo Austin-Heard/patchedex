@@ -56,6 +56,8 @@ def upload_file():
     print('before for loop ' + file_to_parse)
     masterlist = []
     for filename in os.listdir('COMPARISON_FOLDER/'):
+        if filename == file_to_parse:
+            continue
         sublist = []
         comparison_image_raw = 'COMPARISON_FOLDER/' + filename
         comparison_image = cv2.imread(comparison_image_raw)
