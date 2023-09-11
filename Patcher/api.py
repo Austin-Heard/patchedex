@@ -78,4 +78,5 @@ def upload_file():
     return returnlist
 
 if __name__ == "__main__":
+    pull_from_Square()
     app.run(debug=True, host="0.0.0.0", port=8080, processes=100, threaded=False)
