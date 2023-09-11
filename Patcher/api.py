@@ -11,7 +11,7 @@ import requests
 app = Flask(__name__)
 
 s3 = boto3.resource('s3', region_name='us-east-2')
-BUCKET = 'tobytether'
+BUCKET = 'af-tether'
 
 def pull_from_Square():
     dir = 'BGRM_FOLDER/'
@@ -26,7 +26,7 @@ def pull_from_Square():
     for obj in s3.Bucket(BUCKET).objects.filter(Prefix='Square/'):
         if obj.key == 'Square/':
             continue
-        url = 'https://tobytether.s3.us-east-2.amazonaws.com/Square/' + obj.key[7:]
+        url = 'https://af-tether.s3.us-east-2.amazonaws.com/Square/' + obj.key[7:]
         r = requests.get(url, allow_redirects=True)
         open('COMPARISON_FOLDER/' + obj.key[7:], 'wb').write(r.content)
 
@@ -61,7 +61,7 @@ def upload_file():
         comparison_image = cv2.imread(comparison_image_raw)
         comparison_image = cv2.cvtColor(comparison_image, cv2.COLOR_BGR2GRAY)
         error = ssim(comparison_image, original_image)
-        sublist = [error, 'https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + filename[:-7] + bgrm_ext + png]
+        sublist = [error, 'https://af-tether.s3.us-east-2.amazonaws.com/NoBg/' + filename[:-7] + bgrm_ext + png]
         masterlist.append(sublist)
     sortedlist = sorted(masterlist, key = itemgetter(0), reverse = True)
     num_suggestions = 6
@@ -70,7 +70,7 @@ def upload_file():
     print('compared ' + file_to_parse)
     for i in range(num_suggestions):
         returnlist.append(sortedlist[i][1])
-    returnlist.append('https://tobytether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + bgrm_ext + png)
+    returnlist.append('https://af-tether.s3.us-east-2.amazonaws.com/NoBg/' + file_to_parse + bgrm_ext + png)
     dir = 'BGRM_FOLDER/'
     os.remove(dir + file_to_parse + bgrm_ext + png)
     dir = 'UPLOAD_FOLDER/'
