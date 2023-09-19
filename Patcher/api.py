@@ -24,6 +24,7 @@ def pull_from_Square():
     for f in os.listdir(dir):
         os.remove(os.path.join(dir, f))
     for obj in s3.Bucket(BUCKET).objects.filter(Prefix='Square/'):
+        # TODO change to secure s3
         if obj.key == 'Square/':
             continue
         url = 'https://af-tether.s3.us-east-2.amazonaws.com/Square/' + obj.key[7:]
@@ -39,6 +40,7 @@ def upload_file():
     slash = '/'
     bgrm_ext = '_bgrm'
     cm_ext = '_cm'
+
     request_image.save(os.path.join('UPLOAD_FOLDER', file_to_parse + png))
     input = Image.open('UPLOAD_FOLDER' + slash + file_to_parse + png)
     output = remove(input)
